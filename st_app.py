@@ -1,29 +1,29 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
-import joblib
-import seaborn as sns
-import matplotlib.pyplot as plt
-import time
 import os
-from sklearn.preprocessing import StandardScaler
-import plotly.express as px
-import requests
 import base64
-import difflib
-from fuzzywuzzy import fuzz,process
-import folium
-from streamlit_folium import st_folium
-import streamlit.components.v1 as components
+import warnings
+
+# Suppress unpickling and feature name warnings globally
+try:
+    from sklearn.exceptions import InconsistentVersionWarning
+    warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
+except ImportError:
+    pass
+warnings.filterwarnings("ignore", category=UserWarning)
+
+# Convert local logo to base64 and cache the result for performance
+@st.cache_data
+def get_image_base64(path):
+    with open(path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode()
 
 def login_page():
-    # Convert local logo to base64
-    def get_image_base64(path):
-        with open(path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode()
-
-    logo_path = "D:/Sultan_Prj/logo.png"  # Replace with your logo path
-    logo_base64 = get_image_base64(logo_path)
+    logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo.png")
+    if os.path.exists(logo_path):
+        logo_base64 = get_image_base64(logo_path)
+        logo_html = f'<div class="logo-container"><img src="data:image/png;base64,{logo_base64}" alt="Logo"></div>'
+    else:
+        logo_html = ""
 
     st.markdown(
         f"""
@@ -75,9 +75,7 @@ def login_page():
                 font-size: 16px;
             }}
         </style>
-        <div class="logo-container">
-            <img src="data:image/png;base64,{logo_base64}" alt="Logo">
-        </div>
+        {logo_html}
         <div class="login-container">
             <h1>CKD DETECTION LOGIN PAGE</h1>
         </div>
@@ -114,11 +112,13 @@ if not st.session_state['logged_in']:
     login_page()
 else:
     st.sidebar.button("Logout", on_click=logout)
+    import pandas as pd
       # Replace with your main app content
 
     # Load the trained model
     @st.cache_resource
     def load_model():
+        import joblib
         model_path = 'RFmodel.pkl'
         if os.path.exists(model_path):
          return joblib.load(model_path)
@@ -129,7 +129,7 @@ else:
 
 # Function to preprocess user input
     def preprocess_input(data):
-       
+       from sklearn.preprocessing import StandardScaler
        df = pd.DataFrame(data, index=[0])
        scaler = StandardScaler()
        df_scaled = scaler.fit_transform(df)
@@ -153,29 +153,29 @@ else:
 
     # Input fields for features
         age = st.number_input("Age", min_value=1, max_value=120, value=30)
-        blood_pressure = st.number_input("Blood Pressure (mm Hg)", min_value=50, max_value=200, value=80)
-        specific_gravity = st.selectbox("Specific Gravity", [1.005, 1.010, 1.015, 1.020, 1.025])
-        albumin = st.selectbox("Albumin Level", [0, 1, 2, 3, 4, 5])
-        sugar = st.selectbox("Sugar Level", [0, 1, 2, 3, 4, 5])
-        red_blood_cells = st.selectbox("Red Blood Cells", ["normal", "abnormal"])
-        pus_cell = st.selectbox("Pus Cell", ["normal", "abnormal"])
-        pus_cell_clumps = st.selectbox("Pus Cell Clumps", ["present", "not present"])
-        bacteria = st.selectbox("Bacteria", ["present", "not present"])
-        blood_glucose_random = st.number_input("Blood Glucose Random (mg/dL)", min_value=50, max_value=500, value=131)
-        blood_urea = st.number_input("Blood Urea (mg/dL)", min_value=1, max_value=500, value=18)
-        serum_creatinine = st.number_input("Serum Creatinine (mg/dL)", min_value=0.1, max_value=20.0, value=1.2)
-        sodium = st.number_input("Sodium (mEq/L)", min_value=100, max_value=200, value=141)
-        potassium = st.number_input("Potassium (mEq/L)", min_value=1.0, max_value=10.0, value=3.5)
-        haemoglobin = st.number_input("Haemoglobin (g/dL)", min_value=3.0, max_value=20.0, value=15.8)
-        packed_cell_volume = st.number_input("Packed Cell Volume", min_value=20, max_value=60, value=53)
-        white_blood_cell_count = st.number_input("White Blood Cell Count (cells/cmm)", min_value=1000, max_value=20000, value=6800)
-        red_blood_cell_count = st.number_input("Red Blood Cell Count (millions/cmm)", min_value=1.0, max_value=10.0, value=6.1)
-        hypertension = st.selectbox("Hypertension", ["yes", "no"])
-        diabetes_mellitus = st.selectbox("Diabetes Mellitus", ["yes", "no"])
-        coronary_artery_disease = st.selectbox("Coronary Artery Disease", ["yes", "no"])
-        appetite = st.selectbox("Appetite", ["good", "poor"])
-        peda_edema = st.selectbox("Pedal Edema", ["yes", "no"])
-        aanemia = st.selectbox("Anemia", ["yes", "no"])
+        blood_pressure = st.number_input("Blood Pressure (mm Hg)", min_value=50, max_value=200, value=70)
+        specific_gravity = st.selectbox("Specific Gravity", [1.005, 1.010, 1.015, 1.020, 1.025], index=4)
+        albumin = st.selectbox("Albumin Level", [0, 1, 2, 3, 4, 5], index=0)
+        sugar = st.selectbox("Sugar Level", [0, 1, 2, 3, 4, 5], index=0)
+        red_blood_cells = st.selectbox("Red Blood Cells", ["normal", "abnormal"], index=0)
+        pus_cell = st.selectbox("Pus Cell", ["normal", "abnormal"], index=0)
+        pus_cell_clumps = st.selectbox("Pus Cell Clumps", ["present", "not present"], index=1)
+        bacteria = st.selectbox("Bacteria", ["present", "not present"], index=1)
+        blood_glucose_random = st.number_input("Blood Glucose Random (mg/dL)", min_value=50, max_value=500, value=107)
+        blood_urea = st.number_input("Blood Urea (mg/dL)", min_value=1, max_value=500, value=33)
+        serum_creatinine = st.number_input("Serum Creatinine (mg/dL)", min_value=0.1, max_value=20.0, value=0.86)
+        sodium = st.number_input("Sodium (mEq/L)", min_value=100, max_value=200, value=142)
+        potassium = st.number_input("Potassium (mEq/L)", min_value=1.0, max_value=10.0, value=4.3)
+        haemoglobin = st.number_input("Haemoglobin (g/dL)", min_value=3.0, max_value=20.0, value=15.2)
+        packed_cell_volume = st.number_input("Packed Cell Volume", min_value=20, max_value=60, value=46)
+        white_blood_cell_count = st.number_input("White Blood Cell Count (cells/cmm)", min_value=1000, max_value=20000, value=7700)
+        red_blood_cell_count = st.number_input("Red Blood Cell Count (millions/cmm)", min_value=1.0, max_value=10.0, value=5.4)
+        hypertension = st.selectbox("Hypertension", ["yes", "no"], index=1)
+        diabetes_mellitus = st.selectbox("Diabetes Mellitus", ["yes", "no"], index=1)
+        coronary_artery_disease = st.selectbox("Coronary Artery Disease", ["yes", "no"], index=1)
+        appetite = st.selectbox("Appetite", ["good", "poor"], index=0)
+        peda_edema = st.selectbox("Pedal Edema", ["yes", "no"], index=1)
+        aanemia = st.selectbox("Anemia", ["yes", "no"], index=1)
 
     # Map categorical variables to numeric values as per the training dataset
         mapping = {
@@ -185,12 +185,12 @@ else:
             "not present": 0,
             "yes": 1,
             "no": 0,
-            "good": 1,
-            "poor": 0
+            "good": 0,
+            "poor": 1
         }
 
-    # Prepare the input data
-        input_data = np.array([
+    # Prepare the input data as a DataFrame with feature names to match the model training phase
+        input_data = pd.DataFrame([[
             age, blood_pressure, specific_gravity, albumin, sugar,
             mapping[red_blood_cells], mapping[pus_cell], mapping[pus_cell_clumps],
             mapping[bacteria], blood_glucose_random, blood_urea, serum_creatinine,
@@ -198,7 +198,12 @@ else:
             red_blood_cell_count, mapping[hypertension], mapping[diabetes_mellitus],
             mapping[coronary_artery_disease], mapping[appetite], mapping[peda_edema],
             mapping[aanemia]
-        ]).reshape(1, -1)
+        ]], columns=[
+            'age', 'blood_pressure', 'specific_gravity', 'albumin', 'sugar', 'red_blood_cells', 'pus_cell',
+            'pus_cell_clumps', 'bacteria', 'blood_glucose_random', 'blood_urea', 'serum_creatinine', 'sodium',
+            'potassium', 'haemoglobin', 'packed_cell_volume', 'white_blood_cell_count', 'red_blood_cell_count',
+            'hypertension', 'diabetes_mellitus', 'coronary_artery_disease', 'appetite', 'peda_edema', 'aanemia'
+        ])
 
         if st.button("Predict"):
             prediction = model.predict(input_data)
@@ -242,6 +247,7 @@ else:
 
     
     elif menu == "Nearby Hospitals":
+        import difflib
         st.title("🏥 Nearby Hospital Recommendations")
         st.markdown("---")
 
@@ -349,6 +355,9 @@ else:
 
 
     elif menu == "Data Visualization":
+        import seaborn as sns
+        import matplotlib.pyplot as plt
+        import plotly.express as px
         st.header("CKD Dataset Visualization")
         st.markdown("---")
         uploaded_file = st.file_uploader("Upload CKD dataset (CSV format)", type=["csv"])
@@ -362,7 +371,7 @@ else:
                       'hypertension', 'diabetes_mellitus', 'coronary_artery_disease', 'appetite', 'peda_edema', 'aanemia', 'class']
         
         # Convert categorical data to numerical if needed
-            categorical_cols = df.select_dtypes(include=['object']).columns
+            categorical_cols = df.select_dtypes(include=['object', 'string']).columns
             for col in categorical_cols:
                 df[col] = df[col].astype('category').cat.codes  # Convert strings to integers
             # Filter numerical data
@@ -372,43 +381,61 @@ else:
             st.dataframe(numerical_df.head())
 
             st.write("#### Correlation Heatmap")
-            plt.figure(figsize=(10, 6))
-            sns.heatmap(numerical_df.corr(), annot=True, cmap='coolwarm', fmt=".2f") # type: ignore
-            st.pyplot(plt)
-            plt.clf()
+            fig_corr, ax_corr = plt.subplots(figsize=(10, 6))
+            sns.heatmap(numerical_df.corr(), annot=True, cmap='coolwarm', fmt=".2f", ax=ax_corr)
+            st.pyplot(fig_corr)
+            plt.close(fig_corr)
 
             st.write("#### Custom Bar Chart with Colors")
             selected_column = st.selectbox("Select column for bar chart", df.select_dtypes(include=['int64', 'float64']).columns)
-            plt.figure(figsize=(10, 6))
-            plt.bar(df[selected_column].index, df[selected_column], color='#FF5733')
-            plt.xlabel(selected_column)
-            plt.ylabel("Value")
-            plt.title(f"{selected_column} Distribution")
-            st.pyplot(plt)
+            fig_bar, ax_bar = plt.subplots(figsize=(10, 6))
+            ax_bar.bar(df[selected_column].index, df[selected_column], color='#FF5733')
+            ax_bar.set_xlabel(selected_column)
+            ax_bar.set_ylabel("Value")
+            ax_bar.set_title(f"{selected_column} Distribution")
+            st.pyplot(fig_bar)
+            plt.close(fig_bar)
 
             st.write("#### Feature Relationships")
             feature_x = st.selectbox("Select X-axis feature", numerical_df.columns)
             feature_y = st.selectbox("Select Y-axis feature", numerical_df.columns)
-            sns.scatterplot(x=numerical_df[feature_x], y=numerical_df[feature_y], hue=df['class'])
-            st.pyplot(plt)
-            plt.clf() 
+            fig_scat, ax_scat = plt.subplots(figsize=(10, 6))
+            sns.scatterplot(x=numerical_df[feature_x], y=numerical_df[feature_y], hue=df['class'], ax=ax_scat)
+            st.pyplot(fig_scat)
+            plt.close(fig_scat)
+
             def kde(col):
                 grid = sns.FacetGrid(df, hue="class", height=6, aspect=2)
                 grid.map(sns.kdeplot, col)
                 grid.add_legend()
                 st.pyplot(grid.fig)
+                plt.close(grid.fig)
             
             def scatter(col1, col2):
                 fig = px.scatter(df, x=col1, y=col2, color="class", template='plotly_dark')
                 st.plotly_chart(fig)
 
             st.write("#### Kernel Density Estimation (KDE) Plots")
-            for feature in ['red_blood_cell_count', 'white_blood_cell_count', 'packed_cell_volume', 'haemoglobin', 'albumin', 'blood_glucose_random', 'sodium', 'blood_urea', 'specific_gravity']:
-                kde(feature)
+            selected_kde_feature = st.selectbox(
+                "Select feature for KDE plot",
+                ['red_blood_cell_count', 'white_blood_cell_count', 'packed_cell_volume', 'haemoglobin', 'albumin', 'blood_glucose_random', 'sodium', 'blood_urea', 'specific_gravity']
+            )
+            kde(selected_kde_feature)
 
             st.write("#### Scatter Plots")
-            scatter('haemoglobin', 'packed_cell_volume')
-            scatter('blood_urea', 'serum_creatinine')
-            scatter('sodium', 'potassium')
+            scatter_preset = st.selectbox(
+                "Select preset scatter plot",
+                [
+                    "haemoglobin vs packed_cell_volume",
+                    "blood_urea vs serum_creatinine",
+                    "sodium vs potassium"
+                ]
+            )
+            if scatter_preset == "haemoglobin vs packed_cell_volume":
+                scatter('haemoglobin', 'packed_cell_volume')
+            elif scatter_preset == "blood_urea vs serum_creatinine":
+                scatter('blood_urea', 'serum_creatinine')
+            elif scatter_preset == "sodium vs potassium":
+                scatter('sodium', 'potassium')
 
     

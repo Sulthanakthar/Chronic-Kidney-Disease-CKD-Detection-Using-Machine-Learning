@@ -1,0 +1,13 @@
+streamlit
+pandas
+numpy
+joblib
+seaborn
+matplotlib
+scikit-learn
+plotly
+requests
+fuzzywuzzy
+Levenshtein
+folium
+streamlit-folium
