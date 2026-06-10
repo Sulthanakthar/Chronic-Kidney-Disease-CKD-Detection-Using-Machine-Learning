@@ -11,3 +11,4 @@ fuzzywuzzy
 Levenshtein
 folium
 streamlit-folium
+nbformat
